@@ -3,6 +3,7 @@ import { DatabaseService } from './database-service';
 import { AIService } from './ai-service';
 import { VectorSearchService } from './vector-service';
 import { mockFeedbackData } from './mock-data';
+import { DASHBOARD_HTML } from './dashboard';
 
 // Re-export the Workflow class for Cloudflare to discover
 export { FeedbackProcessorWorkflow } from './workflows/feedback-processor';
@@ -34,13 +35,23 @@ export default {
       const vectorService = new VectorSearchService(env, aiService);
 
       // Routes
-      if (path === '/' && request.method === 'GET') {
+
+      // Serve dashboard UI
+      if ((path === '/' || path === '/dashboard') && request.method === 'GET') {
+        return new Response(DASHBOARD_HTML, {
+          headers: { 'Content-Type': 'text/html' }
+        });
+      }
+
+      // API info
+      if (path === '/api' && request.method === 'GET') {
         return new Response(JSON.stringify({
           name: 'Feedback Dashboard API',
           version: '2.0.0',
           description: 'Now powered by Cloudflare Workflows',
           endpoints: {
-            'GET /': 'API information',
+            'GET /': 'Dashboard UI',
+            'GET /api': 'API information',
             'GET /products': 'List all products',
             'GET /products/:id': 'Get product details',
             'GET /products/:id/feedback': 'Get feedback for a product',
