@@ -1,0 +1,36 @@
+name = "feedback-dashboard"
+main = "src/index.ts"
+compatibility_date = "2025-01-24"
+compatibility_flags = ["nodejs_compat"]
+
+# Workers AI binding
+[ai]
+binding = "AI"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "feedback-db"
+database_id = "local" # Placeholder for local development
+
+# Vectorize index binding for semantic search
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "feedback-search"
+
+# Queue binding for async feedback processing
+[[queues.producers]]
+binding = "FEEDBACK_QUEUE"
+queue = "feedback-processing-queue"
+
+[[queues.consumers]]
+queue = "feedback-processing-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "feedback-dlq"
+
+# Observability
+[observability]
+enabled = true
+head_sampling_rate = 1

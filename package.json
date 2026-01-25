@@ -1,0 +1,28 @@
+{
+  "name": "cloudflare-pmprototype",
+  "version": "1.0.0",
+  "description": "Product Manager Feedback Analysis Dashboard",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute feedback-db --file=./schema.sql",
+    "db:init:local": "wrangler d1 execute feedback-db --local --file=./schema.sql",
+    "queue:create": "wrangler queues create feedback-processing-queue",
+    "vectorize:create": "wrangler vectorize create feedback-search --dimensions=768 --metric=cosine"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "d1",
+    "vectorize",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^4.60.0"
+  }
+}

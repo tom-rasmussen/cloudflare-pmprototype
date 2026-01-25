@@ -1,383 +1,329 @@
-# Product Feedback Dashboard
+# Feedback Dashboard Prototype
 
-A production-ready feedback aggregation and analysis platform built on Cloudflare's serverless stack. This tool helps product managers collect, analyze, and act on customer feedback from multiple sources using AI-powered sentiment analysis and semantic search.
+A product manager's feedback aggregation and analysis dashboard built on Cloudflare Workers, D1, Workers AI, Vectorize, and Queues.
 
-## 🌟 Features
+## 🎯 Features
 
-- **Multi-Source Aggregation**: Collect feedback from emails, support tickets, GitHub issues, social media, and forums
+- **Multi-Source Feedback Ingestion**: Support for tickets, social media, GitHub, email, and more
 - **AI-Powered Analysis**: Automatic sentiment analysis, categorization, and priority scoring using Workers AI
-- **Semantic Search**: Find relevant feedback using natural language queries powered by Vectorize
-- **Async Processing**: Scalable queue-based processing for handling high volumes
-- **Real-time Analytics**: Dashboard with sentiment trends, category breakdown, and priority insights
-- **Mock Data Generator**: Built-in test data for prototyping and demos
+- **Semantic Search**: Find relevant feedback using natural language queries via Vectorize
+- **Async Processing**: Queue-based processing for scalable feedback analysis
+- **REST API**: Full-featured API for feedback management and insights
 
 ## 🏗️ Architecture
 
 ```
 ┌─────────────┐
-│   Sources   │ (Email, GitHub, Social, Tickets)
+│   Browser   │
+│  /cURL/API  │
 └──────┬──────┘
        │
        ▼
-┌─────────────┐
-│   Worker    │ (API Endpoints)
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│   Queue     │ (Async Processing)
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐     ┌──────────────┐
-│ Workers AI  │────▶│   Vectorize  │ (Embeddings)
-└──────┬──────┘     └──────────────┘
-       │
-       ▼
-┌─────────────┐
-│     D1      │ (Feedback Storage)
-└─────────────┘
+┌─────────────────┐
+│ Cloudflare      │
+│ Worker (API)    │◄──────┐
+└─────┬───────────┘       │
+      │                   │
+      ├───────────►┌──────┴────────┐
+      │            │   D1 Database │
+      │            │   (SQLite)    │
+      │            └───────────────┘
+      │
+      ├───────────►┌───────────────┐
+      │            │  Workers AI   │
+      │            │ (Llama, BGE)  │
+      │            └───────────────┘
+      │
+      ├───────────►┌───────────────┐
+      │            │  Vectorize    │
+      │            │ (Vector DB)   │
+      │            └───────────────┘
+      │
+      └───────────►┌───────────────┐
+                   │  Queue        │
+                   │  (Consumer)   │
+                   └───────────────┘
 ```
 
-## 🚀 Quick Start
+## 📋 Prerequisites
 
-### Prerequisites
+- Cloudflare account
+- Node.js 16.17.0+ installed
+- Wrangler CLI (`npm install -g wrangler`)
 
-- Node.js 18+
-- Wrangler CLI: `npm install -g wrangler`
-- Cloudflare account with Workers Paid plan (for AI, Vectorize, and Queues)
+## 🚀 Setup Instructions
 
-### 1. Clone and Install
+### 1. Install Dependencies
 
 ```bash
-cd ~/Downloads/cloudflare-pmprototype
 npm install
 ```
 
-### 2. Authenticate with Cloudflare
+### 2. Login to Cloudflare
 
 ```bash
 wrangler login
 ```
 
-### 3. Create Resources
+### 3. Create D1 Database
 
 ```bash
-# Create D1 database
-wrangler d1 create feedback_db
+# Create the database
+wrangler d1 create feedback-db
 
-# Create Vectorize index
-wrangler vectorize create feedback_embeddings --dimensions=768 --metric=cosine
-
-# Create queue
-wrangler queues create feedback-processing-queue
+# Copy the database_id from the output and paste it into wrangler.toml
+# Update the line: database_id = "your-database-id-here"
 ```
 
-### 4. Update wrangler.toml
-
-After creating resources, update the IDs in `wrangler.toml`:
-
-```toml
-[[d1_databases]]
-binding = "DB"
-database_name = "feedback_db"
-database_id = "YOUR_DATABASE_ID_HERE"  # From step 3
-```
-
-### 5. Run Database Migrations
+### 4. Initialize Database Schema
 
 ```bash
-# For local development
-wrangler d1 execute feedback_db --local --file=./schema.sql
+# Initialize locally for development
+npm run db:init:local
 
-# For production
-wrangler d1 execute feedback_db --remote --file=./schema.sql
+# Initialize remote for production
+npm run db:init
 ```
 
-### 6. Start Development Server
+### 5. Create Vectorize Index
 
 ```bash
-wrangler dev
+npm run vectorize:create
+
+# This creates an index named "feedback-search" with 768 dimensions
+# The configuration is already set in wrangler.toml
 ```
 
-Visit `http://localhost:8787` to see the dashboard!
-
-### 7. Deploy to Production
+### 6. Create Queue
 
 ```bash
-wrangler deploy
+npm run queue:create
+
+# Creates "feedback-processing-queue" for async processing
 ```
+
+### 7. Start Development Server
+
+```bash
+npm run dev
+```
+
+The API will be available at `http://localhost:8787`
 
 ## 📡 API Endpoints
 
-### Health Check
-```
-GET /
-```
+### Core Endpoints
 
-### Generate Mock Data
-```
-POST /api/mock/generate
-Content-Type: application/json
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | API information and available endpoints |
+| GET | `/products` | List all products |
+| GET | `/products/:id` | Get specific product |
+| GET | `/products/:id/feedback` | Get feedback for a product |
+| GET | `/products/:id/stats` | Get feedback statistics |
+| GET | `/sources` | List feedback sources |
 
-{
-  "count": 20,
-  "product": "CloudFlow Pro"
-}
-```
+### Feedback Submission
 
-### Submit Feedback
-```
-POST /api/feedback
-Content-Type: application/json
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/feedback` | Submit new feedback (auto-queued for processing) |
+| GET | `/feedback/:id` | Get specific feedback |
+| GET | `/feedback/:id/similar` | Find similar feedback items |
 
-{
-  "source": "email",
-  "source_id": "unique_id",
-  "product": "CloudFlow Pro",
-  "title": "Feature request",
-  "content": "Would love to see dark mode...",
-  "author": "John Doe",
-  "author_email": "john@example.com"
-}
-```
+### Search
 
-### List Feedback
-```
-GET /api/feedback?product=CloudFlow+Pro&sentiment=negative&limit=50
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/products/:id/search?q=query` | Text-based search |
+| GET | `/products/:id/semantic-search?q=query` | AI-powered semantic search |
 
-Query parameters:
-- `product` - Filter by product name
-- `source` - Filter by source (email, github, etc.)
-- `sentiment` - Filter by sentiment (positive, negative, neutral)
-- `category` - Filter by category
-- `priority` - Filter by priority
-- `status` - Filter by status
-- `limit` - Results per page (default: 50)
-- `offset` - Pagination offset
+### Testing
 
-### Get Single Feedback
-```
-GET /api/feedback/:id
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/load-mock-data` | Load 12 mock feedback items for testing |
+
+## 🧪 Testing the API
+
+### 1. Load Mock Data
+
+```bash
+curl -X POST http://localhost:8787/load-mock-data
 ```
 
-### Semantic Search
-```
-POST /api/feedback/search
-Content-Type: application/json
+This will create 12 feedback items across 3 products and queue them for AI processing.
 
-{
-  "query": "performance issues with loading",
-  "limit": 10
-}
+### 2. Check Products
+
+```bash
+curl http://localhost:8787/products
 ```
 
-### Get Analytics
-```
-GET /api/analytics?product=CloudFlow+Pro&start_date=2024-01-01&end_date=2024-12-31
-```
+### 3. View Feedback for a Product
 
-## 🔧 Configuration
+```bash
+# CloudSync Pro (product_id: 1)
+curl http://localhost:8787/products/1/feedback
 
-### Environment Variables (wrangler.toml)
+# TaskFlow (product_id: 2)
+curl http://localhost:8787/products/2/feedback
 
-- **D1 Database**: Stores all feedback and metadata
-- **Vectorize**: Stores embeddings for semantic search
-- **Workers AI**: Processes feedback for sentiment, categorization, and embeddings
-- **Queue**: Handles async processing of feedback items
-
-### Queue Configuration
-
-```toml
-[[queues.consumers]]
-queue = "feedback-processing-queue"
-max_batch_size = 10        # Process up to 10 items at once
-max_batch_timeout = 30     # Wait up to 30s to fill batch
-max_retries = 3            # Retry failed items 3 times
+# DataViz Analytics (product_id: 3)
+curl http://localhost:8787/products/3/feedback
 ```
 
-## 🧪 Testing the Dashboard
+### 4. Get Statistics
 
-1. **Generate Mock Data**: Click "Generate Mock Data" button to create 20 test feedback items
-2. **Wait for Processing**: Queue processes items asynchronously (10-30 seconds)
-3. **Refresh Dashboard**: Click "Refresh" to see processed feedback
-4. **Test Semantic Search**: Try queries like "bugs", "slow performance", "feature requests"
-5. **Filter by Product**: Use the product dropdown to filter results
+```bash
+curl http://localhost:8787/products/1/stats
+```
 
-## 🎯 Use Cases
+### 5. Semantic Search
+
+```bash
+# Find feedback about sync issues
+curl "http://localhost:8787/products/1/semantic-search?q=problems%20with%20syncing%20files"
+
+# Find performance complaints
+curl "http://localhost:8787/products/2/semantic-search?q=slow%20performance"
+```
+
+### 6. Submit New Feedback
+
+```bash
+curl -X POST http://localhost:8787/feedback \
+  -H "Content-Type: application/json" \
+  -d '{
+    "product_id": 1,
+    "source_name": "email",
+    "title": "Love the new UI",
+    "content": "The redesigned interface is beautiful and much easier to navigate. Great job!",
+    "author_name": "Happy User",
+    "author_email": "user@example.com"
+  }'
+```
+
+## 🔍 How It Works
+
+### Feedback Processing Pipeline
+
+1. **Submission**: Feedback is submitted via API
+2. **Storage**: Stored in D1 database with status 'unprocessed'
+3. **Queue**: Message sent to processing queue
+4. **AI Analysis**: 
+   - Sentiment analysis (-1 to 1 score)
+   - Category classification (bug, feature_request, etc.)
+   - Priority scoring (low, medium, high, critical)
+5. **Embedding**: Text converted to 768-dimensional vector using BGE model
+6. **Indexing**: Vector stored in Vectorize for semantic search
+7. **Complete**: Status updated to 'processed'
+
+### AI Models Used
+
+- **Llama 3.1 8B Instruct** (`@cf/meta/llama-3.1-8b-instruct`): Sentiment and categorization
+- **BGE Base EN v1.5** (`@cf/baai/bge-base-en-v1.5`): Text embeddings for semantic search
+
+### Database Schema
+
+- **products**: Product catalog
+- **feedback_sources**: Source types (zendesk, github, twitter, etc.)
+- **feedback**: All feedback with AI analysis results
+- **feedback_summaries**: AI-generated summaries and insights
+
+## 🎨 Example Use Cases
 
 ### For Product Managers
-- Identify trending issues across products
-- Track sentiment over time
-- Prioritize feature requests based on demand
-- Spot critical bugs from multiple channels
 
-### For Support Teams
-- Find related issues quickly with semantic search
-- Track ticket sentiment trends
-- Identify recurring problems
+1. **Discover Themes**: "Show me all feedback about performance issues"
+2. **Track Sentiment**: View sentiment trends over time per product
+3. **Prioritize Issues**: See critical bugs and high-priority feature requests
+4. **Find Patterns**: Semantic search to find related feedback across sources
 
-### For Engineering Teams
-- Get aggregated bug reports
-- Understand feature request context
-- Track performance complaints
+### Example Queries
 
-## 🔌 Integration Examples
+```bash
+# Find all critical bugs
+curl "http://localhost:8787/products/1/search?q=critical"
 
-### Email Webhook (SendGrid)
-```javascript
-// Configure SendGrid to POST to your worker
-POST /api/feedback
-{
-  "source": "email",
-  "source_id": "msg_123",
-  "product": "CloudFlow Pro",
-  "content": email.body,
-  "author": email.from.name,
-  "author_email": email.from.email
-}
+# Semantic search for UX issues
+curl "http://localhost:8787/products/2/semantic-search?q=confusing%20user%20interface"
+
+# Find similar feedback to a specific item
+curl http://localhost:8787/feedback/1/similar
 ```
 
-### GitHub Issues
-```javascript
-// GitHub webhook handler
-if (webhook.action === 'opened' && webhook.issue) {
-  await fetch('https://your-worker.workers.dev/api/feedback', {
-    method: 'POST',
-    body: JSON.stringify({
-      source: 'github',
-      source_id: `issue_${webhook.issue.number}`,
-      product: 'CloudFlow Pro',
-      title: webhook.issue.title,
-      content: webhook.issue.body,
-      author: webhook.issue.user.login,
-      metadata: JSON.stringify({
-        repo: webhook.repository.full_name,
-        issue_number: webhook.issue.number,
-        labels: webhook.issue.labels
-      })
-    })
-  });
-}
+## 🚀 Deployment
+
+```bash
+npm run deploy
 ```
 
-### Zendesk Integration
-```javascript
-// Zendesk webhook
-POST /api/feedback
-{
-  "source": "support_ticket",
-  "source_id": "ticket_12345",
-  "product": "CloudFlow Pro",
-  "title": ticket.subject,
-  "content": ticket.description,
-  "author": ticket.requester.name,
-  "author_email": ticket.requester.email,
-  "metadata": JSON.stringify({
-    ticket_id: ticket.id,
-    priority: ticket.priority,
-    tags: ticket.tags
-  })
-}
+This will deploy to your `*.workers.dev` subdomain. You can also configure a custom domain in the Cloudflare dashboard.
+
+## 📊 Data Model
+
+### Products (Pre-populated)
+- CloudSync Pro (id: 1) - Cloud storage service
+- TaskFlow (id: 2) - Project management tool
+- DataViz Analytics (id: 3) - BI platform
+
+### Feedback Sources (Pre-populated)
+- zendesk, github, twitter, email, intercom, reddit
+
+### Mock Data Includes
+- Bug reports
+- Feature requests
+- Performance complaints
+- Positive reviews
+- UX issues
+- Pricing feedback
+- Documentation issues
+
+## 🔧 Development Tips
+
+### Viewing Queue Processing
+
+Queue processing happens automatically. Check Wrangler logs:
+
+```bash
+wrangler tail
 ```
 
-## 🧠 AI Models Used
+### Testing Locally
 
-### Sentiment Analysis & Categorization
-- Model: `@cf/meta/llama-3.1-8b-instruct`
-- Analyzes feedback for sentiment, category, priority
-- Generates concise summaries
+All bindings work in local development:
+- D1: Local SQLite database
+- Vectorize: Requires remote connection (set `remote = true`)
+- Workers AI: Requires remote connection (always remote)
+- Queues: Local simulation
 
-### Embeddings for Semantic Search
-- Model: `@cf/baai/bge-base-en-v1.5`
-- Generates 768-dimensional embeddings
-- Enables natural language search
+### Debugging
 
-## 📊 Database Schema
+Enable verbose logging in `wrangler.toml`:
+```toml
+[observability]
+enabled = true
+head_sampling_rate = 1
+```
 
-### Feedback Table
-- `id` - Auto-increment primary key
-- `source` - Origin (email, github, social, etc.)
-- `product` - Product name
-- `title` - Feedback title
-- `content` - Full feedback text
-- `sentiment` - positive/negative/neutral
-- `sentiment_score` - 0-1 score
-- `category` - bug/feature_request/ux_issue/performance/etc.
-- `priority` - low/medium/high/critical
-- `status` - new/reviewing/planned/resolved/closed
-- `ai_summary` - AI-generated summary
-- `created_at` - Submission timestamp
-- `processed_at` - Processing timestamp
+## 🎯 Next Steps for Production
 
-## 🚦 Rate Limits & Costs
+1. **Authentication**: Add API authentication
+2. **Rate Limiting**: Implement rate limiting
+3. **Webhooks**: Add webhook endpoints for real-time integrations
+4. **Dashboard UI**: Build React/Next.js frontend
+5. **Scheduled Jobs**: Add cron triggers for periodic summaries
+6. **Real Integrations**: Connect to actual Zendesk, GitHub, etc.
+7. **User Management**: Multi-tenant support
 
-### Cloudflare Workers Paid Plan Limits
-- Workers AI: 10,000 neurons/day included
-- Vectorize: 30M queried vectors/month included
-- D1: 25 GB storage included
-- Queues: 1M operations/month included
+## 📝 Notes
 
-### Estimated Costs (per 1,000 feedback items)
-- Workers AI: ~$0.50 (sentiment + embeddings)
-- Vectorize: ~$0.01 (storage + queries)
-- D1: ~$0.00 (well within free tier)
-- Queue: ~$0.00 (well within free tier)
+- This is a prototype for testing Cloudflare's developer tools
+- Mock data is AI-generated for demonstration
+- Queue processing may take a few seconds
+- First AI inference may be slower (cold start)
 
-## 🔐 Security Considerations
+## 🤝 Feedback Welcome
 
-- Add API authentication for production webhooks
-- Validate webhook signatures (SendGrid, GitHub, etc.)
-- Rate limit API endpoints
-- Sanitize user input before storage
-- Use Cloudflare Access for dashboard authentication
-
-## 📈 Scaling Tips
-
-1. **High Volume**: Increase queue batch size and timeout
-2. **Large Products**: Add pagination to all endpoints
-3. **Analytics**: Cache analytics results in KV namespace
-4. **Search**: Pre-generate common search embeddings
-5. **Multi-Region**: Deploy Workers globally for low latency
-
-## 🐛 Troubleshooting
-
-### Queue items not processing
-- Check queue consumer is configured in wrangler.toml
-- Verify Workers AI binding is correct
-- Check logs: `wrangler tail`
-
-### Vectorize errors
-- Ensure dimensions match (768 for bge-base)
-- Verify index was created with correct settings
-- Check embedding generation isn't failing
-
-### D1 query errors
-- Run migrations: `wrangler d1 execute feedback_db --file=./schema.sql`
-- Check database ID in wrangler.toml
-- Verify SQL syntax compatibility
-
-## 🤝 Contributing
-
-This is a prototype for learning and testing Cloudflare's AI capabilities. Feel free to:
-- Add new data sources
-- Improve AI prompts
-- Enhance the dashboard UI
-- Add more analytics views
-
-## 📝 License
-
-MIT
-
-## 🔗 Resources
-
-- [Cloudflare Workers Docs](https://developers.cloudflare.com/workers/)
-- [Workers AI Documentation](https://developers.cloudflare.com/workers-ai/)
-- [Vectorize Documentation](https://developers.cloudflare.com/vectorize/)
-- [D1 Database Documentation](https://developers.cloudflare.com/d1/)
-- [Queues Documentation](https://developers.cloudflare.com/queues/)
-
----
-
-Built with ❤️ using Cloudflare's AI-powered edge platform
+This is a prototype to explore Cloudflare's PM tools. Feedback on the developer experience is valuable for improving Cloudflare's platform!
