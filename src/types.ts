@@ -3,7 +3,28 @@ export interface Env {
   DB: D1Database;
   AI: Ai;
   VECTORIZE: VectorizeIndex;
-  FEEDBACK_QUEUE: Queue<FeedbackQueueMessage>;
+  FEEDBACK_WORKFLOW: Workflow;
+}
+
+// Workflow binding type
+export interface Workflow {
+  create(options?: { id?: string; params?: any }): Promise<WorkflowInstance>;
+  get(id: string): Promise<WorkflowInstance>;
+}
+
+export interface WorkflowInstance {
+  id: string;
+  status(): Promise<WorkflowStatus>;
+  pause(): Promise<void>;
+  resume(): Promise<void>;
+  terminate(): Promise<void>;
+  restart(): Promise<void>;
+}
+
+export interface WorkflowStatus {
+  status: 'queued' | 'running' | 'paused' | 'complete' | 'errored' | 'terminated';
+  output?: any;
+  error?: string;
 }
 
 // Database types

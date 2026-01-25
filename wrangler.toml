@@ -11,24 +11,18 @@ binding = "AI"
 [[d1_databases]]
 binding = "DB"
 database_name = "feedback-db"
-database_id = "local" # Placeholder for local development
+database_id = "871ebcba-8402-4a46-be6d-f04b551895c7"
 
 # Vectorize index binding for semantic search
 [[vectorize]]
 binding = "VECTORIZE"
 index_name = "feedback-search"
 
-# Queue binding for async feedback processing
-[[queues.producers]]
-binding = "FEEDBACK_QUEUE"
-queue = "feedback-processing-queue"
-
-[[queues.consumers]]
-queue = "feedback-processing-queue"
-max_batch_size = 10
-max_batch_timeout = 30
-max_retries = 3
-dead_letter_queue = "feedback-dlq"
+# Workflow for durable feedback processing
+[[workflows]]
+name = "feedback-processor"
+binding = "FEEDBACK_WORKFLOW"
+class_name = "FeedbackProcessorWorkflow"
 
 # Observability
 [observability]

@@ -1,9 +1,11 @@
-import { Env, CreateFeedbackRequest, FeedbackQueueMessage } from './types';
+import { Env, CreateFeedbackRequest } from './types';
 import { DatabaseService } from './database-service';
 import { AIService } from './ai-service';
 import { VectorSearchService } from './vector-service';
-import { queueConsumer } from './queue-consumer';
 import { mockFeedbackData } from './mock-data';
+
+// Re-export the Workflow class for Cloudflare to discover
+export { FeedbackProcessorWorkflow } from './workflows/feedback-processor';
 
 export default {
   /**
@@ -35,7 +37,8 @@ export default {
       if (path === '/' && request.method === 'GET') {
         return new Response(JSON.stringify({
           name: 'Feedback Dashboard API',
-          version: '1.0.0',
+          version: '2.0.0',
+          description: 'Now powered by Cloudflare Workflows',
           endpoints: {
             'GET /': 'API information',
             'GET /products': 'List all products',
@@ -44,10 +47,11 @@ export default {
             'GET /products/:id/stats': 'Get feedback statistics',
             'GET /products/:id/search': 'Search feedback (query param: q)',
             'GET /products/:id/semantic-search': 'Semantic search (query param: q)',
-            'POST /feedback': 'Submit new feedback',
-            'POST /load-mock-data': 'Load test data',
+            'POST /feedback': 'Submit new feedback (triggers workflow)',
             'GET /feedback/:id': 'Get specific feedback',
             'GET /feedback/:id/similar': 'Find similar feedback',
+            'GET /workflow/:id': 'Get workflow status',
+            'POST /load-mock-data': 'Load test data',
             'GET /sources': 'List feedback sources'
           }
         }), {
@@ -105,7 +109,7 @@ export default {
           return jsonResponse({ error: 'Query parameter "q" required' }, corsHeaders, 400);
         }
         const results = await vectorService.searchSimilar(query, id, 10);
-        
+
         // Fetch full feedback for results
         const feedbackIds = results.map(r => r.feedbackId);
         const feedbackData = [];
@@ -118,14 +122,14 @@ export default {
             });
           }
         }
-        
+
         return jsonResponse(feedbackData, corsHeaders);
       }
 
-      // Submit new feedback
+      // Submit new feedback - triggers Workflow
       if (path === '/feedback' && request.method === 'POST') {
         const data: CreateFeedbackRequest = await request.json();
-        
+
         // Validate required fields
         if (!data.product_id || !data.source_name || !data.content) {
           return jsonResponse(
@@ -135,19 +139,20 @@ export default {
           );
         }
 
-        // Create feedback
+        // Create feedback in database
         const feedbackId = await dbService.createFeedback(data);
-        
-        // Queue for processing
-        await env.FEEDBACK_QUEUE.send({
-          feedbackId,
-          action: 'process'
-        } as FeedbackQueueMessage);
+
+        // Trigger the processing workflow
+        const workflowInstance = await env.FEEDBACK_WORKFLOW.create({
+          id: `feedback-${feedbackId}-${Date.now()}`,
+          params: { feedbackId }
+        });
 
         return jsonResponse({
           success: true,
           feedback_id: feedbackId,
-          message: 'Feedback submitted and queued for processing'
+          workflow_id: workflowInstance.id,
+          message: 'Feedback submitted and workflow started'
         }, corsHeaders, 201);
       }
 
@@ -165,7 +170,7 @@ export default {
       if (path.match(/^\/feedback\/\d+\/similar$/) && request.method === 'GET') {
         const id = parseInt(path.split('/')[2]);
         const similar = await vectorService.findSimilar(id, 5);
-        
+
         // Fetch full feedback
         const feedbackData = [];
         for (const s of similar) {
@@ -174,8 +179,26 @@ export default {
             feedbackData.push({ ...fb, similarity_score: s.score });
           }
         }
-        
+
         return jsonResponse(feedbackData, corsHeaders);
+      }
+
+      // Get workflow status
+      if (path.match(/^\/workflow\/[\w-]+$/) && request.method === 'GET') {
+        const workflowId = path.split('/')[2];
+        try {
+          const instance = await env.FEEDBACK_WORKFLOW.get(workflowId);
+          const status = await instance.status();
+          return jsonResponse({
+            workflow_id: workflowId,
+            ...status
+          }, corsHeaders);
+        } catch (error) {
+          return jsonResponse({
+            error: 'Workflow not found',
+            workflow_id: workflowId
+          }, corsHeaders, 404);
+        }
       }
 
       // Get feedback sources
@@ -184,27 +207,31 @@ export default {
         return jsonResponse(sources, corsHeaders);
       }
 
-      // Load mock data
+      // Load mock data - triggers workflows for each item
       if (path === '/load-mock-data' && request.method === 'POST') {
         const results = [];
         for (const mockFeedback of mockFeedbackData) {
           try {
             const feedbackId = await dbService.createFeedback(mockFeedback);
-            
-            // Queue for processing
-            await env.FEEDBACK_QUEUE.send({
-              feedbackId,
-              action: 'process'
-            } as FeedbackQueueMessage);
-            
-            results.push({ success: true, feedback_id: feedbackId });
+
+            // Trigger workflow for processing
+            const workflowInstance = await env.FEEDBACK_WORKFLOW.create({
+              id: `feedback-${feedbackId}-${Date.now()}`,
+              params: { feedbackId }
+            });
+
+            results.push({
+              success: true,
+              feedback_id: feedbackId,
+              workflow_id: workflowInstance.id
+            });
           } catch (error) {
             results.push({ success: false, error: String(error) });
           }
         }
-        
+
         return jsonResponse({
-          message: 'Mock data loaded',
+          message: 'Mock data loaded and workflows started',
           results
         }, corsHeaders);
       }
@@ -219,13 +246,6 @@ export default {
         details: String(error)
       }, corsHeaders, 500);
     }
-  },
-
-  /**
-   * Queue consumer handler
-   */
-  async queue(batch: MessageBatch<FeedbackQueueMessage>, env: Env): Promise<void> {
-    await queueConsumer(batch, env);
   }
 };
 
