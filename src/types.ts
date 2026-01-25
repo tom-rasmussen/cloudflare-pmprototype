@@ -59,6 +59,7 @@ export interface Feedback {
   category: string | null;
   priority: string | null;
   status: string;
+  feedback_type: string | null;  // 'internal' or 'external'
   raw_data: string | null;
   created_at: string;
   processed_at: string | null;
@@ -94,6 +95,9 @@ export interface CreateFeedbackRequest {
   author_email?: string;
   url?: string;
   raw_data?: Record<string, any>;
+  priority?: string;  // Optional: skip AI detection if provided
+  category?: string;  // Optional: skip AI detection if provided
+  feedback_type?: 'internal' | 'external';  // internal = slack/discord, external = customers
 }
 
 export interface AIAnalysisResult {
