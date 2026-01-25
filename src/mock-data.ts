@@ -112,5 +112,132 @@ export const mockFeedbackData: CreateFeedbackRequest[] = [
     source_name: 'twitter',
     content: 'DataViz Analytics has transformed how we present data to stakeholders. The real-time dashboard updates and beautiful visualizations make data storytelling so much easier. Highly recommend!',
     author_name: 'DataScience_Pro'
+  },
+  // Additional CloudSync Pro feedback
+  {
+    product_id: 1,
+    source_name: 'zendesk',
+    external_id: 'TICKET-2001',
+    title: 'Files disappearing after sync',
+    content: 'Some of our files are disappearing after syncing between devices. We noticed that files with special characters in the name like "&" or "%" are not syncing properly. This is affecting our design team who use these in file names frequently.',
+    author_name: 'Design Lead',
+    author_email: 'design@creative.co'
+  },
+  {
+    product_id: 1,
+    source_name: 'email',
+    title: 'Love the new dark mode!',
+    content: 'Just wanted to say thank you for adding dark mode in the latest update. As someone who works late nights, this is a lifesaver for my eyes. The implementation is beautiful and consistent across all screens.',
+    author_name: 'Night Owl Developer',
+    author_email: 'dev@nightshift.io'
+  },
+  {
+    product_id: 1,
+    source_name: 'reddit',
+    title: 'CloudSync vs competitors',
+    content: 'Been using CloudSync Pro for 6 months now after switching from Dropbox. The speed is noticeably better and the version history feature has saved me multiple times. Only complaint is the mobile app could use some work.',
+    author_name: 'ProductivityNerd',
+    url: 'https://reddit.com/r/cloudstorage/comments/abc'
+  },
+  {
+    product_id: 1,
+    source_name: 'intercom',
+    title: 'Need offline mode',
+    content: 'I travel frequently and often don\'t have internet. Would really appreciate an offline mode where I can mark certain folders to be available offline. Currently I have to use a third-party tool for this.',
+    author_name: 'Frequent Traveler',
+    author_email: 'traveler@consulting.com'
+  },
+  // Additional TaskFlow feedback
+  {
+    product_id: 2,
+    source_name: 'github',
+    external_id: 'ISSUE-789',
+    title: 'Keyboard shortcuts not working on Firefox',
+    content: 'None of the keyboard shortcuts work when using Firefox browser. Tested on Firefox 120+ on both Mac and Windows. Chrome works fine. Please add cross-browser support for accessibility.',
+    author_name: 'Firefox User',
+    author_email: 'firefox.fan@email.com',
+    url: 'https://github.com/taskflow/issues/789'
+  },
+  {
+    product_id: 2,
+    source_name: 'email',
+    title: 'Amazing customer support!',
+    content: 'Just wanted to give a shoutout to your support team, especially Maria who helped me migrate our team from Asana. She was patient, knowledgeable, and went above and beyond. You have a customer for life!',
+    author_name: 'Happy Customer',
+    author_email: 'happy@smallbusiness.com'
+  },
+  {
+    product_id: 2,
+    source_name: 'zendesk',
+    external_id: 'TICKET-4567',
+    title: 'Calendar integration broken',
+    content: 'The Google Calendar integration stopped working after your last update. Tasks with due dates are no longer appearing in our calendars. This is causing missed deadlines across our organization.',
+    author_name: 'Operations Manager',
+    author_email: 'ops@logistics.com'
+  },
+  {
+    product_id: 2,
+    source_name: 'twitter',
+    title: 'Feature request: Time tracking',
+    content: 'Would love to see built-in time tracking in @TaskFlow. Currently we use Toggl alongside but native integration would be much cleaner. Any plans for this?',
+    author_name: 'AgencyOwner'
+  },
+  {
+    product_id: 2,
+    source_name: 'intercom',
+    title: 'Confusing onboarding experience',
+    content: 'We just signed up for TaskFlow and the onboarding is quite confusing. Too many features thrown at you at once. A more gradual introduction or interactive tutorial would help new users get started.',
+    author_name: 'New User',
+    author_email: 'newbie@startup.io'
+  },
+  // Additional DataViz Analytics feedback
+  {
+    product_id: 3,
+    source_name: 'email',
+    title: 'Export to PDF is broken',
+    content: 'When exporting dashboards to PDF, the charts are cut off and the formatting is completely wrong. This used to work fine last month. We need this for board presentations.',
+    author_name: 'Executive Assistant',
+    author_email: 'ea@corporation.com'
+  },
+  {
+    product_id: 3,
+    source_name: 'github',
+    external_id: 'ISSUE-456',
+    title: 'SQL query timeout too short',
+    content: 'The 30-second timeout for SQL queries is too short for our complex analytical queries. Some of our reports require joins across large datasets. Please allow custom timeout settings.',
+    author_name: 'Data Engineer',
+    author_email: 'data@techcompany.com',
+    url: 'https://github.com/dataviz/issues/456'
+  },
+  {
+    product_id: 3,
+    source_name: 'reddit',
+    title: 'Best BI tool for startups',
+    content: 'After trying Looker, Metabase, and Tableau, we settled on DataViz Analytics. The learning curve is gentler and the pricing makes more sense for a startup our size. Highly recommend for teams under 50 people.',
+    author_name: 'StartupCTO',
+    url: 'https://reddit.com/r/analytics/comments/def'
+  },
+  {
+    product_id: 3,
+    source_name: 'zendesk',
+    external_id: 'TICKET-7890',
+    title: 'Mobile dashboard view is unusable',
+    content: 'The mobile web experience for viewing dashboards is terrible. Charts don\'t resize properly, text overlaps, and interactive elements are too small to tap. We need to share dashboards with executives on the go.',
+    author_name: 'Mobile User',
+    author_email: 'mobile@field.com'
+  },
+  {
+    product_id: 3,
+    source_name: 'twitter',
+    content: 'The new alerting feature in @DataVizAnalytics is exactly what we needed. Now we get Slack notifications when KPIs go out of range. No more manual checking! 🎉',
+    author_name: 'DataDriven_PM'
+  },
+  {
+    product_id: 3,
+    source_name: 'intercom',
+    title: 'SSO integration issues',
+    content: 'We\'re trying to set up SAML SSO with Okta but the configuration keeps failing. The error messages are not helpful. We\'ve been going back and forth with support for 2 weeks now with no resolution.',
+    author_name: 'IT Admin',
+    author_email: 'it@enterprise.org'
   }
 ];
