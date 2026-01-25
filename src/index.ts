@@ -190,6 +190,92 @@ export default {
         return jsonResponse(stats, corsHeaders);
       }
 
+      // AI Summary for product
+      if (path.match(/^\/products\/\d+\/ai-summary$/) && method === 'GET') {
+        const id = parseInt(path.split('/')[2]);
+        const product = await dbService.getProduct(id);
+        if (!product) {
+          return jsonResponse({ error: 'Product not found' }, corsHeaders, 404);
+        }
+
+        // Get all feedback for this product
+        const feedback = await dbService.getFeedbackByProduct(id, 100);
+
+        if (feedback.length === 0) {
+          return jsonResponse({
+            summary: 'No feedback yet for this product.',
+            critical_issues: [],
+            recent_tickets: [],
+            themes: [],
+            sentiment_breakdown: { positive: 0, negative: 0, neutral: 0 }
+          }, corsHeaders);
+        }
+
+        // Get critical/high priority issues
+        const criticalIssues = feedback
+          .filter(f => f.priority === 'critical' || f.priority === 'high')
+          .slice(0, 5)
+          .map(f => ({ id: f.id, title: f.title || 'Untitled', priority: f.priority, category: f.category }));
+
+        // Get most recent tickets
+        const recentTickets = feedback
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 5)
+          .map(f => ({ id: f.id, title: f.title || 'Untitled', created_at: f.created_at, sentiment: f.sentiment_label }));
+
+        // Calculate sentiment breakdown
+        const sentimentBreakdown = {
+          positive: feedback.filter(f => f.sentiment_label === 'positive').length,
+          negative: feedback.filter(f => f.sentiment_label === 'negative').length,
+          neutral: feedback.filter(f => f.sentiment_label === 'neutral').length
+        };
+
+        // Generate AI summary
+        const feedbackTexts = feedback.slice(0, 20).map(f => {
+          const priority = f.priority || 'unknown';
+          const sentiment = f.sentiment_label || 'unknown';
+          const title = f.title || '';
+          const content = f.content?.substring(0, 150) || '';
+          return '[' + priority + '] [' + sentiment + '] ' + title + ': ' + content;
+        }).join('\n');
+
+        const summaryPrompt = 'You are a product manager assistant. Analyze this feedback for "' + product.name + '" and provide:\n' +
+          '1. A 2-3 sentence executive summary of the overall feedback themes and sentiment\n' +
+          '2. The top 3 recurring themes or issues (as a comma-separated list)\n\n' +
+          'Feedback data:\n' + feedbackTexts + '\n\n' +
+          'Respond in JSON format:\n' +
+          '{\n' +
+          '  "summary": "your executive summary here",\n' +
+          '  "themes": ["theme1", "theme2", "theme3"]\n' +
+          '}';
+
+        let aiSummary = 'Unable to generate summary.';
+        let themes: string[] = [];
+
+        try {
+          const aiResult = await aiService.runInference(summaryPrompt);
+          // Parse JSON from response
+          const jsonMatch = aiResult.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            aiSummary = parsed.summary || aiSummary;
+            themes = parsed.themes || [];
+          }
+        } catch (e) {
+          console.error('AI summary error:', e);
+        }
+
+        return jsonResponse({
+          product_name: product.name,
+          total_tickets: feedback.length,
+          summary: aiSummary,
+          themes,
+          critical_issues: criticalIssues,
+          recent_tickets: recentTickets,
+          sentiment_breakdown: sentimentBreakdown
+        }, corsHeaders);
+      }
+
       // Get analytics (pie chart data)
       if (path.match(/^\/products\/\d+\/analytics$/) && method === 'GET') {
         const id = parseInt(path.split('/')[2]);

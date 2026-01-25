@@ -70,6 +70,26 @@ Respond with a JSON object in this exact format:
   }
 
   /**
+   * Run a custom inference prompt
+   */
+  async runInference(prompt: string): Promise<string> {
+    try {
+      const response = await this.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant. Always respond with valid JSON when asked for JSON output.' },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 500
+      });
+
+      return response.response || '';
+    } catch (error) {
+      console.error('AI inference error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Generate a summary of multiple feedback items
    */
   async generateSummary(feedbackItems: Array<{ title?: string; content: string; category?: string }>): Promise<string> {

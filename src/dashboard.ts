@@ -320,6 +320,158 @@ export const DASHBOARD_HTML = `<!DOCTYPE html>
         .toast.success { background: #48bb78; }
         .toast.error { background: #f56565; }
 
+        /* AI Summary Panel */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+        }
+        .main-layout.no-summary {
+            grid-template-columns: 1fr;
+        }
+        .ai-summary-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        .ai-summary-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .ai-summary-header h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3748;
+            margin: 0;
+        }
+        .ai-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .summary-section {
+            margin-bottom: 18px;
+        }
+        .summary-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .summary-text {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #4a5568;
+        }
+        .summary-themes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .theme-tag {
+            background: #edf2f7;
+            color: #4a5568;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        .summary-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .summary-stat-row:last-child { border-bottom: none; }
+        .summary-stat-label { font-size: 12px; color: #718096; }
+        .summary-stat-value { font-size: 13px; font-weight: 600; }
+        .summary-stat-value.positive { color: #48bb78; }
+        .summary-stat-value.negative { color: #f56565; }
+        .summary-stat-value.neutral { color: #ed8936; }
+        .critical-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: #fff5f5;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .critical-item:hover { background: #fed7d7; }
+        .critical-item .priority-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .critical-item .priority-dot.critical { background: #c53030; }
+        .critical-item .priority-dot.high { background: #dd6b20; }
+        .critical-item-title {
+            font-size: 12px;
+            color: #2d3748;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .recent-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: #f7fafc;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .recent-item:hover { background: #edf2f7; }
+        .recent-item-title {
+            font-size: 12px;
+            color: #2d3748;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .recent-item-date {
+            font-size: 10px;
+            color: #a0aec0;
+        }
+        .summary-loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #718096;
+        }
+        .summary-loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
     </style>
 </head>
 <body>
@@ -406,14 +558,34 @@ export const DASHBOARD_HTML = `<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Tab Content -->
-            <div id="tab-kanban" class="tab-content">
-                <div class="kanban-board" id="kanban-board"></div>
-            </div>
+            <!-- Main Layout with AI Panel -->
+            <div class="main-layout" id="main-layout">
+                <div class="content-area">
+                    <!-- Tab Content -->
+                    <div id="tab-kanban" class="tab-content">
+                        <div class="kanban-board" id="kanban-board"></div>
+                    </div>
 
-            <div id="tab-list" class="tab-content" style="display: none;">
-                <div class="card">
-                    <div class="feedback-list" id="feedback-list"></div>
+                    <div id="tab-list" class="tab-content" style="display: none;">
+                        <div class="card">
+                            <div class="feedback-list" id="feedback-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Summary Panel -->
+                <div class="ai-summary-panel" id="ai-summary-panel">
+                    <div class="ai-summary-header">
+                        <span>🤖</span>
+                        <h3>AI Insights</h3>
+                        <span class="ai-badge">Auto</span>
+                    </div>
+                    <div id="ai-summary-content">
+                        <div class="summary-loading">
+                            <div class="summary-loading-spinner"></div>
+                            <div>Analyzing feedback...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -673,6 +845,107 @@ export const DASHBOARD_HTML = `<!DOCTYPE html>
             event.currentTarget.classList.add('selected');
             document.getElementById('main-content').style.display = 'block';
             loadFeedback();
+            loadAISummary();
+        }
+
+        async function loadAISummary() {
+            if (!currentProduct) return;
+
+            const container = document.getElementById('ai-summary-content');
+            container.innerHTML = \`
+                <div class="summary-loading">
+                    <div class="summary-loading-spinner"></div>
+                    <div>Analyzing feedback...</div>
+                </div>
+            \`;
+
+            try {
+                const res = await fetch(API + '/products/' + currentProduct.id + '/ai-summary');
+                const data = await res.json();
+                renderAISummary(data);
+            } catch (e) {
+                container.innerHTML = '<div class="summary-loading">Failed to load AI summary</div>';
+            }
+        }
+
+        function renderAISummary(data) {
+            const container = document.getElementById('ai-summary-content');
+
+            // Sentiment percentages
+            const total = data.sentiment_breakdown.positive + data.sentiment_breakdown.negative + data.sentiment_breakdown.neutral;
+            const posPercent = total > 0 ? Math.round((data.sentiment_breakdown.positive / total) * 100) : 0;
+            const negPercent = total > 0 ? Math.round((data.sentiment_breakdown.negative / total) * 100) : 0;
+            const neutPercent = total > 0 ? Math.round((data.sentiment_breakdown.neutral / total) * 100) : 0;
+
+            // Handle themes as string or array
+            let themesArray = [];
+            if (data.themes) {
+                if (Array.isArray(data.themes)) {
+                    themesArray = data.themes;
+                } else if (typeof data.themes === 'string') {
+                    themesArray = data.themes.split(',').map(t => t.trim()).filter(t => t);
+                }
+            }
+
+            container.innerHTML = \`
+                <div class="summary-section">
+                    <div class="summary-section-title">Executive Summary</div>
+                    <div class="summary-text">\${data.summary}</div>
+                </div>
+
+                \${themesArray.length > 0 ? \`
+                <div class="summary-section">
+                    <div class="summary-section-title">Top Themes</div>
+                    <div class="summary-themes">
+                        \${themesArray.map(t => \`<span class="theme-tag">\${t}</span>\`).join('')}
+                    </div>
+                </div>
+                \` : ''}
+
+                <div class="summary-section">
+                    <div class="summary-section-title">Sentiment Breakdown</div>
+                    <div class="summary-stat-row">
+                        <span class="summary-stat-label">😊 Positive</span>
+                        <span class="summary-stat-value positive">\${data.sentiment_breakdown.positive} (\${posPercent}%)</span>
+                    </div>
+                    <div class="summary-stat-row">
+                        <span class="summary-stat-label">😐 Neutral</span>
+                        <span class="summary-stat-value neutral">\${data.sentiment_breakdown.neutral} (\${neutPercent}%)</span>
+                    </div>
+                    <div class="summary-stat-row">
+                        <span class="summary-stat-label">😞 Negative</span>
+                        <span class="summary-stat-value negative">\${data.sentiment_breakdown.negative} (\${negPercent}%)</span>
+                    </div>
+                </div>
+
+                \${data.critical_issues && data.critical_issues.length > 0 ? \`
+                <div class="summary-section">
+                    <div class="summary-section-title">🚨 Critical Issues</div>
+                    \${data.critical_issues.map(issue => \`
+                        <div class="critical-item" onclick="openDetail(\${issue.id})">
+                            <span class="priority-dot \${issue.priority}"></span>
+                            <span class="critical-item-title">\${issue.title}</span>
+                        </div>
+                    \`).join('')}
+                </div>
+                \` : ''}
+
+                \${data.recent_tickets && data.recent_tickets.length > 0 ? \`
+                <div class="summary-section">
+                    <div class="summary-section-title">📅 Recent Activity</div>
+                    \${data.recent_tickets.map(ticket => \`
+                        <div class="recent-item" onclick="openDetail(\${ticket.id})">
+                            <span class="recent-item-title">\${ticket.title}</span>
+                            <span class="recent-item-date">\${new Date(ticket.created_at).toLocaleDateString()}</span>
+                        </div>
+                    \`).join('')}
+                </div>
+                \` : ''}
+
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="btn btn-outline btn-sm" onclick="loadAISummary()">🔄 Refresh</button>
+                </div>
+            \`;
         }
 
         async function loadFeedback() {
