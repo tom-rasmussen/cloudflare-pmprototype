@@ -9,12 +9,6 @@ import { DASHBOARD_HTML } from './dashboard';
 // Re-export the Workflow class for Cloudflare to discover
 export { FeedbackProcessorWorkflow } from './workflows/feedback-processor';
 
-/**
- * NOTE: Workers has no built-in router, but Cloudflare recommends Hono framework
- * (https://developers.cloudflare.com/workers/framework-guides/web-apps/more-web-frameworks/hono/)
- * This prototype uses manual routing for simplicity, but production apps should use Hono.
- */
-
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -152,7 +146,6 @@ export default {
           await dbService.deleteProduct(id);
           return jsonResponse({ success: true, message: 'Product deleted' }, corsHeaders);
         } catch (e) {
-          // FRICTION: D1 foreign key errors are not descriptive
           return jsonResponse({
             error: 'Cannot delete product with existing feedback',
             details: String(e)
