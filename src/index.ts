@@ -10,13 +10,9 @@ import { DASHBOARD_HTML } from './dashboard';
 export { FeedbackProcessorWorkflow } from './workflows/feedback-processor';
 
 /**
- * FRICTION POINTS NOTED IN THIS FILE:
- *
- * 1. No built-in router - manual path matching is verbose and error-prone
- * 2. CORS handling must be done manually for every response
- * 3. Request body parsing requires manual JSON.parse with error handling
- * 4. No middleware support - auth/logging must be duplicated
- * 5. Path parameter extraction is manual (regex + split)
+ * NOTE: Workers has no built-in router, but Cloudflare recommends Hono framework
+ * (https://developers.cloudflare.com/workers/framework-guides/web-apps/more-web-frameworks/hono/)
+ * This prototype uses manual routing for simplicity, but production apps should use Hono.
  */
 
 export default {

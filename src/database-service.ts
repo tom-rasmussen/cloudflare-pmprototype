@@ -29,7 +29,7 @@ export class DatabaseService {
 
   async deleteProduct(id: number): Promise<void> {
     // Note: This will fail if there's feedback referencing this product
-    // FRICTION POINT: D1 doesn't have CASCADE DELETE by default, need manual handling
+    // D1 supports ON DELETE CASCADE - add it to schema if automatic deletion is needed
     await this.env.DB.prepare('DELETE FROM products WHERE id = ?').bind(id).run();
   }
 
@@ -302,8 +302,8 @@ export class DatabaseService {
       GROUP BY fs.name
     `;
 
-    // FRICTION POINT: D1 doesn't support multiple statements in one call
-    // Need to make 5 separate queries which is inefficient
+    // Note: Could use db.batch() to run these queries in a single call for better performance
+    // See: https://developers.cloudflare.com/d1/worker-api/d1-database/
     const [statusResult, sentimentResult, categoryResult, priorityResult, sourceResult] = await Promise.all([
       productId
         ? this.env.DB.prepare(statusQuery).bind(productId).all()

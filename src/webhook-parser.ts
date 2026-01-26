@@ -3,11 +3,9 @@ import { Env } from './types';
 /**
  * Webhook Parser using Cloudflare Workers AI
  *
- * FRICTION POINT: Each AI call has latency (~500ms-2s), and there's no built-in
- * caching for AI responses. For high-volume webhooks, this could be slow.
- *
- * FRICTION POINT: AI output is non-deterministic. Same input may produce
- * slightly different JSON structure. Need robust parsing with fallbacks.
+ * Note: For high-volume webhooks, consider using AI Gateway for caching and rate limiting,
+ * or Workers AI's JSON Mode (response_format) for guaranteed structured output.
+ * See: https://developers.cloudflare.com/workers-ai/features/json-mode/
  */
 
 export interface ParsedWebhook {
@@ -156,8 +154,7 @@ export class WebhookParser {
 
   /**
    * AI-powered parsing for unknown webhook formats
-   *
-   * FRICTION POINT: AI parsing adds ~1-2 seconds latency per request
+   * Note: Consider using JSON Mode for structured output guarantees
    */
   private async aiParse(source: string, payload: any): Promise<ParsedWebhook> {
     const prompt = `Parse this webhook payload from "${source}" and extract feedback information.
