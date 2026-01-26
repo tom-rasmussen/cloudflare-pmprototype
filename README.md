@@ -47,7 +47,7 @@ A product manager's feedback aggregation and analysis dashboard built on Cloudfl
 | **D1** | SQLite database for feedback storage | 5GB, 5M reads/day |
 | **Workers AI** | Sentiment analysis, categorization, embeddings | ~10K neurons/day |
 | **Vectorize** | Vector database for semantic search | 5M dimensions |
-| **Workflows** | Async processing pipeline (replaces Queues) | Included |
+| **Workflows** | Async processing pipeline | Included |
 
 ## Project Structure
 
@@ -67,19 +67,27 @@ src/
 
 ## API Endpoints
 
-### Products
+### Dashboard
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/` | Dashboard UI |
+| GET | `/api` | API documentation |
+
+### Products
+| Method | Endpoint | Description |
+|--------|----------|-------------|
 | GET | `/products` | List all products |
 | POST | `/products` | Create product |
 | GET | `/products/:id` | Get product |
 | PUT | `/products/:id` | Update product |
 | DELETE | `/products/:id` | Delete product |
 | GET | `/products/:id/feedback` | Get feedback for product |
+| GET | `/products/:id/kanban` | Get feedback grouped by status (Kanban view) |
 | GET | `/products/:id/stats` | Get feedback statistics |
+| GET | `/products/:id/analytics` | Get analytics data (pie charts) |
+| GET | `/products/:id/ai-summary` | Get AI-generated insights summary |
 | GET | `/products/:id/search?q=` | Text search |
-| GET | `/products/:id/semantic-search?q=` | AI semantic search |
+| GET | `/products/:id/semantic-search?q=` | AI semantic search via Vectorize |
 
 ### Feedback
 | Method | Endpoint | Description |
@@ -89,7 +97,7 @@ src/
 | PUT | `/feedback/:id` | Update feedback |
 | DELETE | `/feedback/:id` | Delete feedback |
 | PATCH | `/feedback/:id/status` | Update status only |
-| GET | `/feedback/:id/similar` | Find similar feedback |
+| GET | `/feedback/:id/similar` | Find similar feedback via Vectorize |
 
 ### Webhooks
 | Method | Endpoint | Description |
@@ -99,11 +107,14 @@ src/
 | POST | `/webhooks/github` | Receive GitHub webhook |
 | POST | `/webhooks/twitter` | Receive Twitter/X webhook |
 | POST | `/webhooks/email` | Receive email webhook |
+| POST | `/webhooks/test/:source` | Generate test webhook for source |
 
 ### Utility
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/sources` | List feedback sources |
+| GET | `/analytics` | Get global analytics |
+| GET | `/workflow/:id` | Get workflow instance status |
 | POST | `/load-mock-data` | Load 60 test tickets |
 
 ## Dashboard Features
@@ -234,14 +245,6 @@ name = "feedback-processor"
 binding = "FEEDBACK_WORKFLOW"
 class_name = "FeedbackProcessorWorkflow"
 ```
-
-## Why Workflows Instead of Queues?
-
-Cloudflare Queues requires a paid plan ($5/month). Workflows is included in the free tier and provides:
-- Durable execution with automatic retries
-- Step-based processing with state persistence
-- No charge for waiting/sleeping
-- Auto-deploys with the Worker
 
 ## Webhook Integration
 
