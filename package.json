@@ -8,7 +8,6 @@
     "deploy": "wrangler deploy",
     "db:init": "wrangler d1 execute feedback-db --file=./schema.sql",
     "db:init:local": "wrangler d1 execute feedback-db --local --file=./schema.sql",
-    "queue:create": "wrangler queues create feedback-processing-queue",
     "vectorize:create": "wrangler vectorize create feedback-search --dimensions=768 --metric=cosine"
   },
   "keywords": [

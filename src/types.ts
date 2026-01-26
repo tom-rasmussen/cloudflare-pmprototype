@@ -78,12 +78,6 @@ export interface FeedbackSummary {
   created_at: string;
 }
 
-// Queue message types
-export interface FeedbackQueueMessage {
-  feedbackId: number;
-  action: 'process' | 'analyze' | 'embed';
-}
-
 // API types
 export interface CreateFeedbackRequest {
   product_id: number;
