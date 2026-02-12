@@ -2,7 +2,8 @@
 
 A product manager's feedback aggregation and analysis dashboard built on Cloudflare Workers, D1, Workers AI, Vectorize, and Workflows.
 
-**Live Demo:** https://feedback-dashboard.rasmussen-tom.workers.dev           
+**Live Demo:** 
+(https://feedback-dashboard.tom-j-rasmussen.workers.dev)       
 
 
 ## Features
